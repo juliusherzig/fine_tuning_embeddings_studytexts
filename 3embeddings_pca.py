@@ -7,7 +7,7 @@ import pandas as pd
 
 
 #Texte mit Daten einladen
-df = pd.read_json("studytext_part1.jsonl", lines=True) #erstellt ein Pandas DataFrame
+df = pd.read_json("data/studytext_part1.jsonl", lines=True) #erstellt ein Pandas DataFrame
 
 df = df.rename(columns={ #Spalten umbenennen
     "text": "text",

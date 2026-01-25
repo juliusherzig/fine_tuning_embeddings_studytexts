@@ -27,7 +27,7 @@ model = SetFitModel.from_pretrained(
 
 
 # JSONL einlesen und Spalten umbenennen
-dataset_df = pd.read_json("text_part1.jsonl", lines=True) #erstellt ein Pandas DataFrame
+dataset_df = pd.read_json("data/text_part1.jsonl", lines=True) #erstellt ein Pandas DataFrame
 
 dataset_df = dataset_df.rename(columns={ #Spalten umbenennen
     "studytext_part1": "text",

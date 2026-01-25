@@ -1,1 +1,33 @@
-.venv
+# Virtual environments
+.venv/
+venv/
+
+# UV
+.python-version
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Data files (JSONL input data)
+data/
+
+# Model outputs
+# *.npy
+# mein_modernbert_studien_modell/
+
+# R files
+.RData
+.Rhistory
+
+# IDE
+.idea/
+.vscode/
+*.swp
