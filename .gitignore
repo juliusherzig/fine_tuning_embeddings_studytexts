@@ -17,7 +17,7 @@ build/
 *.egg-info/
 
 # Data files (JSONL input data)
-data/
+# data/
 
 # Model outputs
 # *.npy
