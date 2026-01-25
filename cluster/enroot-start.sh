@@ -28,7 +28,7 @@ set -e
 
 # Default values
 DEFAULT_REGISTRY="ghcr.io"
-DEFAULT_IMAGE="juliusherzig/setfit-finetuning:a8c9b62"  #
+DEFAULT_IMAGE="juliusherzig/setfit-finetuning" 
 DEFAULT_TAG="cuda-12.4"
 DEFAULT_SSH_PORT="10022"
 ROOT_ACCESS=false
