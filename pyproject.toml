@@ -15,6 +15,7 @@ dependencies = [
     "triton>=3.2.0; sys_platform == 'linux'",  # GPU acceleration (Linux only, needs python-dev headers)
     "tqdm",
     "setuptools",  # Required by Triton for compilation
+    "python-dotenv",  # For loading secrets from .env
 ]
 
 [build-system]

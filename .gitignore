@@ -3,6 +3,9 @@
 .venv_old*/
 venv/
 
+# Environment variables (secrets)
+.env
+
 # UV
 .python-version
 

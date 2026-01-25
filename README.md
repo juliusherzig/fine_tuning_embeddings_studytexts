@@ -39,30 +39,44 @@ uv run python 2modernbert_ver3_abstuerzschutz.py
 
 Place JSONL data files in the `data/` directory.
 
+## HuggingFace Hub
+
+Share trained models via HuggingFace Hub.
+
+### Setup
+
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Add your HuggingFace tokens to `.env`:
+   - `HF_TOKEN_WRITE`: Your token with write access (for pushing)
+   - `HF_TOKEN_READ`: Token for downloading (can be a different user's token)
+
+   Create tokens at: https://huggingface.co/settings/tokens
+
+### Push Model
+
+Upload a trained model to HuggingFace Hub:
+
+```bash
+uv run hf_model.py push
+```
+
+### Load Model
+
+Download a model from HuggingFace Hub:
+
+```bash
+uv run hf_model.py load
+```
+
+The repository is configured as a constant in `hf_model.py`.
+
 ## Cluster Deployment (Enroot)
 
 Run this project on a GPU cluster using NVIDIA enroot containers with SSH access.
-
-### Build Docker Image
-
-**Option 1: GitHub Actions (Automated)**
-
-The Docker image is automatically built and pushed to `ghcr.io` when changes to `cluster/deployment/` are pushed to main. You can also trigger a build manually from the Actions tab.
-
-To set up:
-1. Add `ROOT_PASSWORD` secret in your repo settings (Settings > Secrets > Actions)
-2. The image will be published to `ghcr.io/<your-user>/setfit-finetuning:cuda-12.4`
-
-**Option 2: Manual Build**
-
-```bash
-# Build
-docker build -t setfit-finetuning -f cluster/deployment/Dockerfile .
-
-# Tag and push to GitHub Container Registry
-docker tag setfit-finetuning ghcr.io/<your-user>/setfit-finetuning:cuda-12.4
-docker push ghcr.io/<your-user>/setfit-finetuning:cuda-12.4
-```
 
 ### Cluster Setup (First Time)
 
