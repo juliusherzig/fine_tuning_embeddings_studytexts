@@ -11,13 +11,20 @@
 import pandas as pd
 from datasets import Dataset, ClassLabel
 from setfit import SetFitModel, Trainer, TrainingArguments
+import torch
+
+# Auto-detect GPU
+device = "cuda" if torch.cuda.is_available() else "cpu"
+print(f"Using device: {device}")
 print("library-load erfolgreich!")
 
 
 #def main():
 # SetFit-Modell laden 
 model = SetFitModel.from_pretrained(
-    "nomic-ai/modernbert-embed-base", trust_remote_code=True,
+    "nomic-ai/modernbert-embed-base", 
+    trust_remote_code=True,
+    device=device,
 )
 
 print("Model-load erfolgreich!")
@@ -63,7 +70,7 @@ del df, train_df, test_df  #Speicherplatz freigeben
 # Trainingsargumente
 args = TrainingArguments(
     num_epochs=1,
-    batch_size=2,  #Bestimmt die Anzahl der Textpaare, die gleichzeitig im RAM gehalten werden. Verringerung entlastet RAM.
+    batch_size=16,  #Bestimmt die Anzahl der Textpaare, die gleichzeitig im RAM gehalten werden. Verringerung entlastet RAM.
     #max_steps=10,  #begrenzt Trainingsdurchläufe (sonst eben Gesamtzahl an Paaren entsprechend der sampling_strategy/ Anzahl Paar pro Durchlauf). Pro Durchlauf wird Anzahl an Textpaaren = batch_size durchlaufen und daran die Modellgewichte angepasst.
 
     sampling_strategy="undersampling", #Sorgt für gleiche Anzahl an pos. und neg. Paaren im Training, indem von der größeren Paare entfernt werden

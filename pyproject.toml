@@ -9,9 +9,9 @@ dependencies = [
     "setfit",
     "transformers",
     "numpy",
-    "torch",
     "scikit-learn",
     "sentence-transformers",
+    "torch",
 ]
 
 [build-system]
@@ -20,3 +20,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
+
+[[tool.uv.index]]
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cuda" }
