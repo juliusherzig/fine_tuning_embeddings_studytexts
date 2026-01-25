@@ -1,5 +1,6 @@
 # Virtual environments
 .venv/
+.venv_old*/
 venv/
 
 # UV
@@ -16,12 +17,19 @@ dist/
 build/
 *.egg-info/
 
-# Data files (JSONL input data)
+# Model checkpoints and outputs
+checkpoints/
+*.npy
+mein_modernbert_studien_modell/
+
+# Data files (tracked separately)
 # data/
 
-# Model outputs
-# *.npy
-# mein_modernbert_studien_modell/
+# Triton cache
+~/.triton/
+
+# NFS lock files
+.nfs*
 
 # R files
 .RData
@@ -31,3 +39,6 @@ build/
 .idea/
 .vscode/
 *.swp
+
+# Enroot squashfs images (large files)
+*.sqsh

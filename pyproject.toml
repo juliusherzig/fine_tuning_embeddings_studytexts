@@ -2,16 +2,19 @@
 name = "setfit-finetuning"
 version = "0.1.0"
 description = "SetFit fine-tuning with ModernBERT"
-requires-python = ">=3.10"
+requires-python = "==3.12.*"  # Pinned for PyTorch/Triton compatibility
 dependencies = [
     "pandas",
     "datasets",
     "setfit",
-    "transformers",
+    "transformers>=4.48.0",  # Required for ModernBERT
     "numpy",
     "scikit-learn",
     "sentence-transformers",
     "torch",
+    "triton>=3.2.0; sys_platform == 'linux'",  # GPU acceleration (Linux only, needs python-dev headers)
+    "tqdm",
+    "setuptools",  # Required by Triton for compilation
 ]
 
 [build-system]

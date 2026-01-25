@@ -4,7 +4,7 @@ Fine-tuning SetFit models with ModernBERT for text classification.
 
 ## Setup
 
-Install dependencies (uses CUDA 12.4 by default for GPU support):
+Install dependencies (uses CUDA 12.4 and Python 3.12 by default):
 
 ```bash
 uv sync
@@ -23,7 +23,11 @@ After installation, verify your setup:
 uv run python test_gpu.py
 ```
 
-This will show whether CUDA is available and which GPU is detected.
+This will show:
+- Python version compatibility
+- CUDA availability and GPU info
+- Triton installation status (required for torch.compile on GPU)
+- Model loading test
 
 ## Running
 
