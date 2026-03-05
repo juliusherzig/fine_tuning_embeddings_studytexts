@@ -35,7 +35,11 @@ This will show:
 uv run python setfit_modernbert_finetuning.py
 ```
 
-## Text encoding, dimensionality reduction, export
+## Generating fine-tuned embeddings
+
+This script loads the fine-tuned SetFit/ModernBERT models from the Hugging Face Hub, 
+encodes study texts into embeddings, and reduces their dimensionality using PCA.  
+The reduced embeddings are exported as `.parquet` files so they can be used for prediction with external models along with other features.
 
 ```bash
 uv run python embedding-extraction_dimensionality-reduction_export.py
