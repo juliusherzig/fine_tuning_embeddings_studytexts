@@ -32,7 +32,7 @@ This will show:
 ## Running
 
 ```bash
-uv run python 2modernbert_ver3_abstuerzschutz.py
+uv run python setfit_modernbert_finetuning.py
 ```
 
 ## Data
