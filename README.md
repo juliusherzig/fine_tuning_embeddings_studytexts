@@ -35,6 +35,13 @@ This will show:
 uv run python setfit_modernbert_finetuning.py
 ```
 
+## Encode texts, reduce embedding dimensionality, and export dimensionality-reduced embeddings
+
+```bash
+uv run python embedding-extraction_dimensionality-reduction_export.py
+```
+
+
 ## Data
 
 Place JSONL data files in the `data/` directory.
