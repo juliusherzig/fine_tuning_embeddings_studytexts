@@ -35,7 +35,7 @@ This will show:
 uv run python setfit_modernbert_finetuning.py
 ```
 
-## Encode texts, reduce embedding dimensionality, and export dimensionality-reduced embeddings
+## Text encoding, dimensionality reduction, export
 
 ```bash
 uv run python embedding-extraction_dimensionality-reduction_export.py
