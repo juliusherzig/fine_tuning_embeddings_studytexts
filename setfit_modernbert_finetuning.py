@@ -4,14 +4,28 @@
 # - Automatischer CPU Fallback mit reference_compile=False (deaktiviert Triton)
 
 # Package-Imports müssen vor main-Schleife stehen
+import os
 import pandas as pd
 from datasets import Dataset, ClassLabel
 from setfit import Trainer
+from dotenv import load_dotenv
+from huggingface_hub import login
 
 from utils.gpu_utils import get_device_config, load_model, get_training_args, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
 
+load_dotenv()
+HF_REPO_PREFIX = "ivozilkenat/setfit-modernbert-studien-modell"
+
 def main():
     """Haupt-Trainingsfunktion."""
+    # HuggingFace login for model push
+    hf_token = os.getenv("HF_TOKEN_WRITE")
+    if hf_token:
+        login(token=hf_token)
+        logger.info("HuggingFace login erfolgreich")
+    else:
+        logger.warning("HF_TOKEN_WRITE nicht gesetzt - Modelle werden nur lokal gespeichert")
+
     # 1. Gerät und Modell mit GPU/CPU Kompatibilität einrichten
     config = get_device_config()
     
