@@ -35,15 +35,19 @@ This will show:
 This script trains a fine-tuned embedding model based on ModernBERT using SetFit for each of the four study text segments.
 
 ```bash
-uv run python setfit_modernbert_finetuning.py
+uv run python setfit_modernbert_finetuning.py            # Train all 4 parts sequentially
+uv run python setfit_modernbert_finetuning.py --part 1    # Train only Part 1
 ```
+
+Use `--part` to run multiple parts in parallel (e.g. in separate terminal sessions or SLURM jobs).
 
 ## Generating fine-tuned embeddings
 
 This script loads the fine-tuned SetFit/ModernBERT models (from local folder or Hugging Face Hub), encodes study texts into embeddings, and reduces their dimensionality using PCA.  The reduced embeddings are exported as `.parquet` files to be used for prediction with external models along with other features.
 
 ```bash
-uv run python embedding-extraction_dimensionality-reduction_export.py
+uv run python embedding-extraction_dimensionality-reduction_export.py            # All 4 parts
+uv run python embedding-extraction_dimensionality-reduction_export.py --part 2   # Only Part 2
 ```
 
 
