@@ -1,4 +1,5 @@
 #load libraries
+import argparse
 from dotenv import load_dotenv
 from pathlib import Path
 import sklearn
@@ -6,26 +7,14 @@ import pandas as pd
 import os
 from utils.gpu_utils import get_device_config, load_model, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
 
-# 0. Umgebung vorbereiten
-## 0.1 erkennt ob GPU oder CPU vorhanden ist und passt batch_size entsprechend an
-load_dotenv()
-config = get_device_config() 
-
-## 0.2 erkennt output-Ordner für die zu exportierenden Embeddings und erstellt ihn ggf. neu
-output_dir = "output_embeddings" 
-if os.path.exists(output_dir):
-    logger.info(f"Ordner '{output_dir}' existiert bereits.")
-else:
-    os.makedirs(output_dir) #ggf. neu erstellen
-    logger.info(f"Ordner '{output_dir}' wurde neu erstellt.")
-
 ## 0.3 Speicherort von fine-tuned Model lokal und in Hugging Face Hub
 
-DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #lokale Bezeichnung der fine-tuned Modelle 
-DEFAULT_REPO_BASE = "juliusherzig/setfit-modernbert-studien" #Bezeichnung der fine-tuned Modelle auf Hugging Face Hub
+DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #lokale Bezeichnung der fine-tuned Modelle
+DEFAULT_REPO_BASE = "ivozilkenat/setfit-modernbert-studien" #Bezeichnung der fine-tuned Modelle auf Hugging Face Hub
 
-# SCHLEIFE: Läuft von 1 bis 4
-for i in range(1, 5):
+
+def process_part(config, i, output_dir):
+    """Embedding-Extraktion für einen einzelnen Part (1-4)."""
     logger.info(f"--- STARTE EMBEDDING-EXTRAKTION FÜR PART {i} ---")
 
     # --------------------------
@@ -37,17 +26,16 @@ for i in range(1, 5):
     local_folder = f"{DEFAULT_LOCAL_PATH}_{i}" #lokaler Name des fine-tuned Modells für Part i
     if Path(local_folder).exists():
         model_source = local_folder
-        logger.info(f"✅ Nutze lokales Modell aus Ordner: {local_folder}")
+        logger.info(f"Nutze lokales Modell aus Ordner: {local_folder}")
     else:
         repo_id = f"{DEFAULT_REPO_BASE}{i}" #Name des fine-tuned Modells auf Hugging Face Hub
         model_source = repo_id
-        logger.info(f"🌐 Lokal nicht gefunden. Lade von Hugging Face: {repo_id}")
-    
+        logger.info(f"Lokal nicht gefunden. Lade von Hugging Face: {repo_id}")
+
     model = load_model(config, model_name=model_source)
 
     # 1.2 Vorbereitung: JSONL einlesen und Spalten umbenennen
     df = pd.read_json(f"data/studytextPart{i}.jsonl", lines=True)  # erstellt ein Pandas DataFrame
-    df = df.head(5).copy() #mit wenigen Texten für testweise schnelles Durchlaufen
 
     # 1.3 Spalten umbenennen
     df = df.rename(columns={  # Spalten umbenennen
@@ -91,3 +79,30 @@ for i in range(1, 5):
     #4.5 Export als .parquet-Datei
     emb_df.to_parquet(file_path)
     logger.info(f"Embeddings für Part {i} wurden erfolgreich exportiert nach: {file_path}")
+
+
+def main():
+    """Haupt-Funktion für Embedding-Extraktion."""
+    load_dotenv()
+
+    parser = argparse.ArgumentParser(description="Embedding-Extraktion und PCA-Reduktion")
+    parser.add_argument("--part", type=int, choices=[1, 2, 3, 4],
+                        help="Spezifischer Part (1-4). Ohne Angabe werden alle verarbeitet.")
+    args = parser.parse_args()
+
+    # 0.1 erkennt ob GPU oder CPU vorhanden ist und passt batch_size entsprechend an
+    config = get_device_config()
+
+    # 0.2 erkennt output-Ordner für die zu exportierenden Embeddings und erstellt ihn ggf. neu
+    output_dir = "output_embeddings"
+    os.makedirs(output_dir, exist_ok=True)
+
+    if args.part:
+        process_part(config, args.part, output_dir)
+    else:
+        for i in range(1, 5):
+            process_part(config, i, output_dir)
+
+
+if __name__ == "__main__":
+    main()
