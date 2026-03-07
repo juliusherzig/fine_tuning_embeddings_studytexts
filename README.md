@@ -1,6 +1,6 @@
 # SetFit Fine-Tuning
 
-Fine-tuning modernBERT (nomic-ai/modernbert-embed-base) for text classification using SetFit. The model is fine-tuned to distinguish between replicable and non-replicable studies based on text parts of the original article referring to the study that had undergone a replication attempt. One separate model is trained for each of four equal-sized segments of the study text. The segmentation has to be performed in advance (see Data). The segmented approach serves, first, to prevent exceeding ModernBERT’s token limit and, second, to allow for a more sensitive detection of segment-specific differences between the two text groups.
+* **Fine-tuning modernBERT** (nomic-ai/modernbert-embed-base) for text classification using SetFit. The model is fine-tuned to distinguish between * **replicable and non-replicable studies** based on text parts of the original article referring to the study that had undergone a replication attempt. One * **separate model is trained for each of four equal-sized segments of the study text**. The segmentation has to be performed in advance (see Data). The segmented approach serves, first, to prevent exceeding ModernBERT’s token limit and, second, to allow for a more sensitive detection of segment-specific differences between the two text groups.
 After fine-tuning, all text segments are embedded by the respective fine-tuned model. Than a Primary Component Analysis (PCA) is applied for dimension reduction and the compressed embeddings are exported to be used among other features in a prediction model for replicability.
 
 ## Setup
@@ -82,7 +82,8 @@ Share trained models via HuggingFace Hub.
 Upload a trained model to HuggingFace Hub:
 
 ```bash
-uv run hf_model_j.py push
+uv run hf_model_j.py push #upload the models for all text segments (1-4)
+uv run hf_model_j.py push --part 1  # upload only the model for Part 1
 ```
 
 ### Load Model
@@ -90,7 +91,8 @@ uv run hf_model_j.py push
 Download a model from HuggingFace Hub:
 
 ```bash
-uv run hf_model_j.py load
+uv run hf_model_j.py load #load the models for all text segments (1-4) 
+uv run hf_model_j.py load --part 2  # download only the model for Part 2
 ```
 
 The repository is configured as a constant in `hf_model_j.py`.
