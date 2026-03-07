@@ -3,6 +3,9 @@
 .venv_old*/
 venv/
 
+#hf-token
+huggingface_token.docx
+
 # Environment variables (secrets)
 .env
 
