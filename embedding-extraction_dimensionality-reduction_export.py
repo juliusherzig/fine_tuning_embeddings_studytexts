@@ -52,14 +52,14 @@ def process_part(config, i, output_dir):
         df["text"].tolist(),
         show_progress_bar=True,
         batch_size=config.batch_size)  # shape: (Anzahl_Texte, Embedding-Dimension)
-    logger.info("Original Embedding-Shape:", embeddings.shape)
+    logger.info(f"Original Embedding-Shape: {embeddings.shape}")
 
     # --------------------------
     # 3. Mit PCA auf weniger Dimensionen reduzieren
     # --------------------------
     pca = sklearn.decomposition.PCA(n_components=32, random_state=42) #n_components can be maximum n_samples
     embeddings_reduced = pca.fit_transform(embeddings)
-    logger.info("Reduced Embedding-Shape:", embeddings_reduced.shape)
+    logger.info(f"Reduced Embedding-Shape: {embeddings_reduced.shape}")
 
     # --------------------------
     # 4️. Exportieren
