@@ -7,10 +7,10 @@ zu/von HuggingFace Hub.
 Um die Textlänge zu begrenzen, wurden die Studientexte zuvor in 4 gleich große Segmente (Parts) aufgeteilt. Es wird für jeden Part ein eigenes Modell trainiert und separat hochgeladen/ heruntergeladen. 
 
 Verwendung:
-    uv run hf_model.py push              # Lokales Modell hochladen
-    uv run hf_model.py load              # Modell von Hub herunterladen
-    uv run hf_model.py push --part 1     # Nur Part 1 hochladen
-    uv run hf_model.py load --part 3     # Nur Part 3 herunterladen"""
+    uv run hf_model_j.py push              # Lokales Modell hochladen
+    uv run hf_model_j.py load              # Modell von Hub herunterladen
+    uv run hf_model_j.py push --part 1     # Nur Part 1 hochladen
+    uv run hf_model_j.py load --part 3     # Nur Part 3 herunterladen"""
 
 import argparse
 import os
@@ -116,10 +116,10 @@ def main():
 
     
 Verwendung:
-  uv run hf_model.py push           # Lädt alle 4 lokalen Modelle hoch
-  uv run hf_model.py load           # Lädt alle 4 Modelle vom Hub herunter
-  uv run hf_model.py push --part 1  # Lädt nur das Modell von Part 1 hoch
-  uv run hf_model.py load --part 3  # Lädt nur das Modell von Part 3 herunter
+  uv run hf_model_j.py push           # Lädt alle 4 lokalen Modelle hoch
+  uv run hf_model_j.py load           # Lädt alle 4 Modelle vom Hub herunter
+  uv run hf_model_j.py push --part 1  # Lädt nur das Modell von Part 1 hoch
+  uv run hf_model_j.py load --part 3  # Lädt nur das Modell von Part 3 herunter
 """
     )
     
