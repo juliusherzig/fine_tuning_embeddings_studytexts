@@ -1,6 +1,7 @@
 # SetFit Fine-Tuning
 
-Fine-tuning SetFit models with ModernBERT for text classification.
+Fine-tuning modernBERT (nomic-ai/modernbert-embed-base) for text classification using SetFit. The model is fine-tuned to distinguish between replicable and non-replicable studies based on text parts of the original article referring to the study that had undergone a replication attempt. One separate model is trained for each of four equal-sized segments of the study text. The segmentation has to be performed in advance (see Data). The segmented approach serves, first, to prevent exceeding ModernBERT’s token limit and, second, to allow for a more sensitive detection of segment-specific differences between the two text groups.
+After fine-tuning, all text segments are embedded by the respective fine-tuned model. Than a Primary Component Analysis (PCA) is applied for dimension reduction and the compressed embeddings are exported to be used among other features in a prediction model for replicability.
 
 ## Setup
 
@@ -31,15 +32,15 @@ This will show:
 
 ## Running
 
+This script trains a fine-tuned embedding model based on ModernBERT using SetFit for each of the four study text segments.
+
 ```bash
 uv run python setfit_modernbert_finetuning.py
 ```
 
 ## Generating fine-tuned embeddings
 
-This script loads the fine-tuned SetFit/ModernBERT models from the Hugging Face Hub, 
-encodes study texts into embeddings, and reduces their dimensionality using PCA.  
-The reduced embeddings are exported as `.parquet` files so they can be used for prediction with external models along with other features.
+This script loads the fine-tuned SetFit/ModernBERT models (from local folder or Hugging Face Hub), encodes study texts into embeddings, and reduces their dimensionality using PCA.  The reduced embeddings are exported as `.parquet` files to be used for prediction with external models along with other features.
 
 ```bash
 uv run python embedding-extraction_dimensionality-reduction_export.py
@@ -49,6 +50,15 @@ uv run python embedding-extraction_dimensionality-reduction_export.py
 ## Data
 
 Place JSONL data files in the `data/` directory.
+Note: The study texts should be separeted in four equal-sized segments in advance
+
+### Requirements:
+* **Naming:** Files must be named `studytextPart{i}.jsonl` (where `i` is 1 to 4).
+* **Content:** Each JSONL file should contain the following fields:
+    * `text`: The specific study text segment.
+    * `label`: Replicability label (0 for non-replicable, 1 for replicable).
+    * `id`: Unique identifier for the study.
+    * `split` (optional): "train" or "test" to ensure consistent data splitting across all four segments during fine-tuning. 
 
 ## HuggingFace Hub
 
@@ -72,7 +82,7 @@ Share trained models via HuggingFace Hub.
 Upload a trained model to HuggingFace Hub:
 
 ```bash
-uv run hf_model.py push
+uv run hf_model_j.py push
 ```
 
 ### Load Model
@@ -80,10 +90,10 @@ uv run hf_model.py push
 Download a model from HuggingFace Hub:
 
 ```bash
-uv run hf_model.py load
+uv run hf_model_j.py load
 ```
 
-The repository is configured as a constant in `hf_model.py`.
+The repository is configured as a constant in `hf_model_j.py`.
 
 ## Cluster Deployment (Enroot)
 
