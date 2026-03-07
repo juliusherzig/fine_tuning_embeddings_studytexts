@@ -14,7 +14,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: setfit-finetuning
-  IMAGE_TAG: cuda-12.4
+  IMAGE_TAG: cuda-12.8
 
 jobs:
   build-and-push:

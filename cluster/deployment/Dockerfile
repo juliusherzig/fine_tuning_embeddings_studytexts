@@ -1,9 +1,9 @@
 # SetFit Finetuning - CUDA Docker Image
 # Build: docker build -t setfit-finetuning -f cluster/deployment/Dockerfile .
-# Push:  docker tag setfit-finetuning ghcr.io/<user>/setfit-finetuning:cuda-12.4
-#        docker push ghcr.io/<user>/setfit-finetuning:cuda-12.4
+# Push:  docker tag setfit-finetuning ghcr.io/<user>/setfit-finetuning:cuda-12.8
+#        docker push ghcr.io/<user>/setfit-finetuning:cuda-12.8
 
-FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Build argument for root password (set during build)
