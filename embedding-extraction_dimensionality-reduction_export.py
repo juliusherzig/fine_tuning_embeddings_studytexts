@@ -1,3 +1,9 @@
+''''
+Anwendung:
+uv run python embedding-extraction_dimensionality-reduction_export.py --part 1 # nur Part 1 wird verarbeitet
+uv run python embedding-extraction_dimensionality-reduction_export.py # ohne Angabe von --part werden alle 4 Parts verarbeitet
+''' 
+
 #load libraries
 import argparse
 from dotenv import load_dotenv
@@ -7,8 +13,8 @@ import pandas as pd
 import os
 from utils.gpu_utils import get_device_config, load_model, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
 
-## 0.3 Speicherort von fine-tuned Model lokal und in Hugging Face Hub
 
+## Speicherort von fine-tuned Model lokal und in Hugging Face Hub als Konstante
 DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #lokale Bezeichnung der fine-tuned Modelle
 DEFAULT_REPO_BASE = "ivozilkenat/setfit-modernbert-studien" #Bezeichnung der fine-tuned Modelle auf Hugging Face Hub
 
