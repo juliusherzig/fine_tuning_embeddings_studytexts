@@ -1,4 +1,4 @@
-# GPU Optimierungen (neu hinzugefügt):
+# GPU Optimierungen:
 # - Verwendet shared utils für geräteunabhängiges Model-Loading
 # - Mixed precision Training (use_amp) auf GPU für schnelleres Training
 # - Automatischer CPU Fallback mit reference_compile=False (deaktiviert Triton)
@@ -8,9 +8,10 @@ import argparse
 import os
 import pandas as pd
 from datasets import Dataset, ClassLabel
-from setfit import Trainer
+from setfit import Trainer, TrainingArguments
 from dotenv import load_dotenv
 from huggingface_hub import login
+from transformers import EarlyStoppingCallback 
 
 from utils.gpu_utils import get_device_config, load_model, get_training_args, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
 
@@ -42,37 +43,50 @@ def train_part(config, i):
 
     train_df = df[df['split'] == "train"]
     test_df = df[df['split'] == "test"]
+    val_df = df[df['split'] == "val"] #neu: Validierungsset aus Trainingsset splitten für stepwise Evaluation und Early Stopping
 
     logger.info(f"Verteilung der Klassen im Trainingsset:\n{train_df['label'].value_counts()}")
     logger.info(f"Verteilung der Klassen im Testset:\n{test_df['label'].value_counts()}")
+    logger.info(f"Verteilung der Klassen im Validierungsset:\n{val_df['label'].value_counts()}")
 
     # in Hugging Face Datasets umwandeln
-    train_dataset = Dataset.from_pandas(train_df)
     test_dataset = Dataset.from_pandas(test_df)
+    train_dataset = Dataset.from_pandas(train_df) 
+    val_dataset = Dataset.from_pandas(val_df)   
 
-    # Spalte 'label' in Typ ClassLabel umwandeln
-    unique_labels = sorted(df["label"].unique())
-    class_label = ClassLabel(num_classes=len(unique_labels), names=[str(x) for x in unique_labels])
+    # Klasse von label in ClassLabel umwandeln
+    class_label = ClassLabel(num_classes=2, names=["0", "1"])
     train_dataset = train_dataset.cast_column("label", class_label)
+    val_dataset = val_dataset.cast_column("label", class_label)
     test_dataset = test_dataset.cast_column("label", class_label)
-
+    
     del df, train_df, test_df  # Speicherplatz freigeben
-
-    # Dieser Befehl ist in in Turorials nur dafür da, aus großen künstlich kleine Datensätze zu machen, um die Leistung von SetFit an kleinen Datensätzen zu demonstrieren.
-    # Das brauche ich hier nicht.
-    # train_dataset = sample_dataset(train_dataset, label_column="label", num_samples=31) #erstellt ein neues Dataset mit 31 Samples pro Klasse
 
     ############ Fine-Tuning mit SetFit ############
     # Trainingsargumente
     # batch_size wird durch device config bestimmt (16 für GPU, 8 für CPU)
     # use_amp=True für mixed precision auf GPU
-    args = get_training_args(config)
+    args = TrainingArguments(
+        num_epochs = 1,
+        batch_size = config.batch_size, #geräteangepasste (GPU/ CPU)
+        use_amp = config.use_amp, #geräteangepasste (GPU/ CPU)
+        sampling_strategy = "undersampling",
+        eval_strategy = "steps", #neu: war bislang "no" => kein Validierungsset. 
+        #eval_strategy "steps" => Evaluation während des Trainings. Detektion davon, dass nur noch Trainingsloss besser wird, aber Vorhersage an Validierungsset nicht mehr, was Overfitting anzeigt. Dann wird Early Stopping getriggert, um Training zu stoppen.
+        save_strategy = "steps", #neu: nötig, um vorheriges Modell laden zu können, wenn Early Stopping getriggert wird, weil weiteres Training keine Verbesserung mehr bringt
+        logging_strategy= "steps",
+        save_steps = 50,        
+        eval_steps = 50,
+        logging_steps = 50,
+        load_best_model_at_end = True,
+    )
 
     trainer = Trainer(
         model=model,
         args=args,
         train_dataset=train_dataset,
-        eval_dataset=test_dataset,  # Evaluationsdatensatz ist der test_dataset
+        eval_dataset=val_dataset,  # Validierungsdatensatz! (Split vom Trainingsset)
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=5)], #neu: Early Stopping beugt Overfitting vor, indem es das Training stoppt, wenn sich die Leistung auf dem Validierungsset nicht mehr verbessert. Hier wird eine Geduld von 5 angegeben, d.h. das Training wird gestoppt, wenn sich die Leistung sich am Validierungsset nicht mehr verbessert.
         metric="accuracy",  # Evaulation an der Accuracy (Trefferquote) messen
     )
 
@@ -80,9 +94,10 @@ def train_part(config, i):
     trainer.train()
 
     # 6.  Evaluieren
-    eval_results = trainer.evaluate()
-    logger.info(f"\nFinale Evaluationsergebnisse: {eval_results}")
-    logger.info(f"Ergebnis Part {i}: {eval_results}")
+    trainer.eval_dataset = test_dataset #Testdatensatz!
+    test_results = trainer.evaluate()
+    logger.info(f"\nFinale Evaluationsergebnisse: {test_results}")
+    logger.info(f"Ergebnis Part {i}: {test_results}")
 
     ## Modell speichern
     model.save_pretrained(f"mein_modernbert_studien_modell_{i}")
