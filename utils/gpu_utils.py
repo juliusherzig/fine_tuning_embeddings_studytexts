@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 MODEL_NAME = "nomic-ai/modernbert-embed-base"
 DEFAULT_BATCH_SIZE_GPU = 4 #(A40, 46G)
 DEFAULT_BATCH_SIZE_CPU = 2
-MAX_TOKENS = 8100  # ModernBERT Limit ist 8192, Puffer für special tokens lassen
-OVERLAP_RATIO = 0.2  # 20% Überlappung für Chunking
 
 
 @dataclass

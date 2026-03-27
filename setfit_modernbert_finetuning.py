@@ -75,29 +75,31 @@ def train_part(config, i):
         #eval_strategy "steps" => Evaluation während des Trainings. Detektion davon, dass nur noch Trainingsloss besser wird, aber Vorhersage an Validierungsset nicht mehr, was Overfitting anzeigt. Dann wird Early Stopping getriggert, um Training zu stoppen.
         save_strategy = "steps", #neu: nötig, um vorheriges Modell laden zu können, wenn Early Stopping getriggert wird, weil weiteres Training keine Verbesserung mehr bringt
         logging_strategy= "steps",
-        save_steps = 50,        
-        eval_steps = 50,
-        logging_steps = 50,
+        save_steps =40 // config.batch_size, # evaluation always after 20 training pairs => after 20/batch_size steps
+        eval_steps = 40//config.batch_size, 
+        logging_steps = 40//config.batch_size,
         load_best_model_at_end = True,
-    )
+    )   
 
     trainer = Trainer(
         model=model,
         args=args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,  # Validierungsdatensatz! (Split vom Trainingsset)
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=5)], #neu: Early Stopping beugt Overfitting vor, indem es das Training stoppt, wenn sich die Leistung auf dem Validierungsset nicht mehr verbessert. Hier wird eine Geduld von 5 angegeben, d.h. das Training wird gestoppt, wenn sich die Leistung sich am Validierungsset nicht mehr verbessert.
-        metric="accuracy",  # Evaulation an der Accuracy (Trefferquote) messen
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=4)], #neu: Early Stopping beugt Overfitting vor, indem Training gestoppt wird, wenn sich die Leistung sich am Validierungsset in 4 Eval. nacheinander nicht verbessert.
+        metric="accuracy",  # Evaluation an der Accuracy (Trefferquote) messen
     )
 
     # Trainieren
     trainer.train()
 
     # 6.  Evaluieren
-    trainer.eval_dataset = test_dataset #Testdatensatz!
-    test_results = trainer.evaluate()
-    logger.info(f"\nFinale Evaluationsergebnisse: {test_results}")
-    logger.info(f"Ergebnis Part {i}: {test_results}")
+    #val_results = trainer.evaluate()
+    #logger.info(f"Validierungsset Evaluationsergebnisse Part {i}: {val_results}")
+
+    #trainer.eval_dataset = test_dataset  # Testset für finale Evaluation setzen
+    #test_results = trainer.evaluate()
+    #logger.info(f"Testset Evaluationsergebnisse Part {i}: {test_results}")
 
     ## Modell speichern
     model.save_pretrained(f"mein_modernbert_studien_modell_{i}")
