@@ -6,7 +6,6 @@ from utils.gpu_utils import (
     get_training_args,
     logger,
     MODEL_NAME,
-    MAX_TOKENS,
 )
 
 __all__ = [
@@ -16,5 +15,4 @@ __all__ = [
     "get_training_args",
     "logger",
     "MODEL_NAME",
-    "MAX_TOKENS",
 ]
