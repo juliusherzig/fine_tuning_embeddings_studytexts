@@ -22,7 +22,7 @@ from huggingface_hub import login
 from setfit import SetFitModel
 
 # Konstanten - hier anpassen
-DEFAULT_REPO_BASE = "ivozilkenat/setfit-modernbert-studien"
+DEFAULT_REPO_BASE = "juliusherzig/setfit-modernbert-studien"
 DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell"
 
 # Spezifizieren, ob Modell für Textpart 1,2,3 oder 4 oder alle gepullt/ gepusht werden soll

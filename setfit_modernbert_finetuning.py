@@ -3,7 +3,7 @@
 # - Mixed precision Training (use_amp) auf GPU für schnelleres Training
 # - Automatischer CPU Fallback mit reference_compile=False (deaktiviert Triton)
 
-# Package-Imports müssen vor main-Schleife stehen
+# Package-Imports
 import argparse
 import os
 import pandas as pd
@@ -79,6 +79,8 @@ def train_part(config, i):
         eval_steps = 40//config.batch_size, 
         logging_steps = 40//config.batch_size,
         load_best_model_at_end = True,
+        metric_for_best_model="accuracy",
+        greater_is_better=True
     )   
 
     trainer = Trainer(
