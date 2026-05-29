@@ -79,3 +79,5 @@ Upload (another) model that was trained in setfit_modernbert_finetuning.py to Hu
 uv run hf_model_j.py push #upload the models for all text segments (1-4)
 uv run hf_model_j.py push --part 1  # upload only the model for Part 1
 ```
+
+*Note: The scripts provided here are configured for local execution. For the actual training of the embedding-models, the code was optimized for GPU-accelerated cluster infrastructure, generously provided and supported by Ivo Zilkenat.*
