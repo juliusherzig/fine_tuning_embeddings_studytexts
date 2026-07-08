@@ -1,8 +1,3 @@
-# GPU Optimierungen:
-# - Verwendet shared utils für geräteunabhängiges Model-Loading
-# - Mixed precision Training (use_amp) auf GPU für schnelleres Training
-# - Automatischer CPU Fallback mit reference_compile=False (deaktiviert Triton)
-
 # Package-Imports
 import argparse
 import os
@@ -13,67 +8,67 @@ from dotenv import load_dotenv
 from huggingface_hub import login
 from transformers import EarlyStoppingCallback 
 
-from utils.gpu_utils import get_device_config, load_model, get_training_args, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
+from utils.gpu_utils import get_device_config, load_model, get_training_args, logger #written by Ivo Zilkenat to detect GPU/CPU and adapt trainings_args like batch_size depending on that
 
 load_dotenv()
-HF_REPO_PREFIX = "ivozilkenat/setfit-modernbert-studien-modell"
+HF_REPO_PREFIX = "juliusherzig/setfit-modernbert-studien-modell"
 
 
 def train_part(config, i):
-    """Trainiert ein einzelnes Part-Modell (1-4)."""
-    logger.info(f"--- STARTE TRAINING FÜR PART {i} ---")
+    """Train a single model for a single text segment (1-4)."""
+    logger.info(f"--- START TRAINING FOR PART {i} ---")
 
     model = load_model(config)
-    logger.info("Model-load erfolgreich!")
+    logger.info("Loading model successful!")
 
-    # JSONL einlesen und Spalten umbenennen
-    df = pd.read_json(f"data/studytextPart{i}.jsonl", lines=True)  # erstellt ein Pandas DataFrame
+    # Load JSON text files and create a Pandas DataFrame
+    df = pd.read_json(f"data/studytextPart{i}.jsonl", lines=True)
 
-    df = df.rename(columns={  # Spalten umbenennen
+    df = df.rename(columns={  # rename columns
         "text": "text",
         "replicationSuccessSigDir": "label",
         "numberOriginal": "numberOriginal",
         "setfitSplit": "split"
     })
 
-    logger.info(f"Daten geladen:\n{df.head()}")
+    logger.info(f"Data loaded:\n{df.head()}")
 
     ################################ Datasplit ################################
-    # Die Variable Split nutzen, die wurde zuvor in R erstellt, damit die Aufteilung in allen 4 Textsegmenten gleich ist.
+    # Use the variable split that was created in R in advance to ensure the same data split in all 4 text segments.
 
     train_df = df[df['split'] == "train"]
     test_df = df[df['split'] == "test"]
-    val_df = df[df['split'] == "val"] #neu: Validierungsset aus Trainingsset splitten für stepwise Evaluation und Early Stopping
+    val_df = df[df['split'] == "val"] #new for Early Stopping: validation set separated from training set for stepwise evaluation and Early Stopping
 
-    logger.info(f"Verteilung der Klassen im Trainingsset:\n{train_df['label'].value_counts()}")
-    logger.info(f"Verteilung der Klassen im Testset:\n{test_df['label'].value_counts()}")
-    logger.info(f"Verteilung der Klassen im Validierungsset:\n{val_df['label'].value_counts()}")
+    logger.info(f"Class distribution in the training set:\n{train_df['label'].value_counts()}")
+    logger.info(f"Class distribution in the test set:\n{test_df['label'].value_counts()}")
+    logger.info(f"Class distribution in the validation set:\n{val_df['label'].value_counts()}")
 
-    # in Hugging Face Datasets umwandeln
+    # transform datasests into Hugging Face Datasets
     test_dataset = Dataset.from_pandas(test_df)
     train_dataset = Dataset.from_pandas(train_df) 
     val_dataset = Dataset.from_pandas(val_df)   
 
-    # Klasse von label in ClassLabel umwandeln
+    # Transfrorm lable into ClassLabel
     class_label = ClassLabel(num_classes=2, names=["0", "1"])
     train_dataset = train_dataset.cast_column("label", class_label)
     val_dataset = val_dataset.cast_column("label", class_label)
     test_dataset = test_dataset.cast_column("label", class_label)
     
-    del df, train_df, test_df  # Speicherplatz freigeben
+    del df, train_df, test_df
 
-    ############ Fine-Tuning mit SetFit ############
+    ############ Fine-Tuning with SetFit ############
     # Trainingsargumente
-    # batch_size wird durch device config bestimmt (16 für GPU, 8 für CPU)
-    # use_amp=True für mixed precision auf GPU
+    # batch_size is device-specific (16 für GPU, 8 für CPU)
+    # use_amp=True für mixed precision at GPU
     args = TrainingArguments(
         num_epochs = 1,
-        batch_size = config.batch_size, #geräteangepasste (GPU/ CPU)
-        use_amp = config.use_amp, #geräteangepasste (GPU/ CPU)
+        batch_size = config.batch_size, #device-specific (GPU/ CPU)
+        use_amp = config.use_amp, #device-specific (GPU/ CPU)
         sampling_strategy = "undersampling",
-        eval_strategy = "steps", #neu: war bislang "no" => kein Validierungsset. 
-        #eval_strategy "steps" => Evaluation während des Trainings. Detektion davon, dass nur noch Trainingsloss besser wird, aber Vorhersage an Validierungsset nicht mehr, was Overfitting anzeigt. Dann wird Early Stopping getriggert, um Training zu stoppen.
-        save_strategy = "steps", #neu: nötig, um vorheriges Modell laden zu können, wenn Early Stopping getriggert wird, weil weiteres Training keine Verbesserung mehr bringt
+        eval_strategy = "steps", #new: was previously "no" => no validation set.
+        #eval_strategy "steps" => Evaluation during training. Detection of when only training loss improves, but prediction on validation set no longer does, indicating overfitting. Then Early Stopping is triggered to stop the training.
+        save_strategy = "steps", #new: necessary to be able to load the previous model when Early Stopping is triggered, because further training does not bring any improvement anymore
         logging_strategy= "steps",
         save_steps =40 // config.batch_size, # evaluation always after 20 training pairs => after 20/batch_size steps
         eval_steps = 40//config.batch_size, 
@@ -87,42 +82,42 @@ def train_part(config, i):
         model=model,
         args=args,
         train_dataset=train_dataset,
-        eval_dataset=val_dataset,  # Validierungsdatensatz! (Split vom Trainingsset)
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=4)], #neu: Early Stopping beugt Overfitting vor, indem Training gestoppt wird, wenn sich die Leistung sich am Validierungsset in 4 Eval. nacheinander nicht verbessert.
-        metric="accuracy",  # Evaluation an der Accuracy (Trefferquote) messen
+        eval_dataset=val_dataset,  # Validation dataset! (Split from the training set)
+        callbacks=[EarlyStoppingCallback(early_stopping_patience=4)], #new: Early Stopping prevents overfitting by stopping training when the performance on the validation set stops improving.
+        metric="accuracy",  # Evaluate based on accuracy (hit rate)
     )
 
-    # Trainieren
+    # Train the model
     trainer.train()
 
-    # 6.  Evaluieren
+    # 6. Evaluate
     #val_results = trainer.evaluate()
-    #logger.info(f"Validierungsset Evaluationsergebnisse Part {i}: {val_results}")
+    #logger.info(f"Evaluation at the validation set in part {i}: {val_results}")
 
-    #trainer.eval_dataset = test_dataset  # Testset für finale Evaluation setzen
+    #trainer.eval_dataset = test_dataset  # Testset for the final evaluation
     #test_results = trainer.evaluate()
     #logger.info(f"Testset Evaluationsergebnisse Part {i}: {test_results}")
 
-    ## Modell speichern
+    ## Save model locally
     model.save_pretrained(f"mein_modernbert_studien_modell_{i}")
 
 
 def main():
-    """Haupt-Trainingsfunktion."""
+    """Main Function """
     parser = argparse.ArgumentParser(description="SetFit ModernBERT Finetuning")
     parser.add_argument("--part", type=int, choices=[1, 2, 3, 4],
-                        help="Spezifischer Part (1-4). Ohne Angabe werden alle trainiert.")
+                        help="Specific Part (1-4). Without specification, all parts will be trained.")
     args = parser.parse_args()
 
     # HuggingFace login for model push
     hf_token = os.getenv("HF_TOKEN_WRITE")
     if hf_token:
         login(token=hf_token)
-        logger.info("HuggingFace login erfolgreich")
+        logger.info("HuggingFace login successful with HF_TOKEN_WRITE")
     else:
-        logger.warning("HF_TOKEN_WRITE nicht gesetzt - Modelle werden nur lokal gespeichert")
+        logger.warning("HF_TOKEN_WRITE not set - models will only be saved locally")
 
-    # 1. Gerät und Modell mit GPU/CPU Kompatibilität einrichten
+    # 1. Set trainning paarameters depending on GPU/CPU 
     config = get_device_config()
 
     if args.part:

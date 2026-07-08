@@ -1,7 +1,7 @@
 ''''
-Anwendung:
-uv run python embedding-extraction_dimensionality-reduction_export.py --part 1 # nur Part 1 wird verarbeitet
-uv run python embedding-extraction_dimensionality-reduction_export.py # ohne Angabe von --part werden alle 4 Parts verarbeitet
+Use:
+uv run python embedding-extraction_dimensionality-reduction_export.py --part 1 # only Part 1 will be processed
+uv run python embedding-extraction_dimensionality-reduction_export.py # without specifying --part, all 4 parts will be processed
 ''' 
 
 #load libraries
@@ -14,42 +14,37 @@ import os
 from utils.gpu_utils import get_device_config, load_model, logger #von Ivo geschrieben, um GPU/CPU zu erkennen und trainings_args wie z.B. batch_size anzupassen
 
 
-## Speicherort von fine-tuned Model lokal und in Hugging Face Hub als Konstante
-DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #lokale Bezeichnung der fine-tuned Modelle
-DEFAULT_REPO_BASE = "ivozilkenat/setfit-modernbert-studien" #Bezeichnung der fine-tuned Modelle auf Hugging Face Hub
-
-## 0.3 Speicherort von fine-tuned Model lokal und in Hugging Face Hub
-
-DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #lokale Bezeichnung der fine-tuned Modelle
-DEFAULT_REPO_BASE = "ivozilkenat/setfit-modernbert-studien" #Bezeichnung der fine-tuned Modelle auf Hugging Face Hub
+## Storage location of the fine-tuned model: locally and on the Hugging Face Hub as a constant
+DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell" #local folder name of the fine-tuned model
+DEFAULT_REPO_BASE = "juliusherzig/setfit-modernbert-studien" #folder name of the fine-tuned model on Hugging Face Hub
 
 
 def process_part(config, i, output_dir):
-    """Embedding-Extraktion für einen einzelnen Part (1-4)."""
-    logger.info(f"--- STARTE EMBEDDING-EXTRAKTION FÜR PART {i} ---")
+    """Embedding Generation for each Text Segment(1-4)."""
+    logger.info(f"--- Start Embedding Generation for Part {i} ---")
 
     # --------------------------
-    # 1. Vorbereitung: Fine-tuned Sentence-Transformer laden und Texte laden
+    # 1. Preparation: Load fine-tuned Sentence-Transformer and load texts
     # --------------------------
 
     # 1.1  Download from the 🤗 Hub
-    # Check: Existiert der lokale Ordner?
+    # Check: Does the local folder for the fine-tuned model exist? If not, download from Hugging Face Hub.
     local_folder = f"{DEFAULT_LOCAL_PATH}_{i}" #lokaler Name des fine-tuned Modells für Part i
     if Path(local_folder).exists():
         model_source = local_folder
         logger.info(f"Nutze lokales Modell aus Ordner: {local_folder}")
     else:
-        repo_id = f"{DEFAULT_REPO_BASE}{i}" #Name des fine-tuned Modells auf Hugging Face Hub
+        repo_id = f"{DEFAULT_REPO_BASE}{i}" 
         model_source = repo_id
         logger.info(f"Lokal nicht gefunden. Lade von Hugging Face: {repo_id}")
 
     model = load_model(config, model_name=model_source)
 
-    # 1.2 Vorbereitung: JSONL einlesen und Spalten umbenennen
-    df = pd.read_json(f"data/studytextPart{i}.jsonl", lines=True)  # erstellt ein Pandas DataFrame
+    # 1.2 Preparation of Texts: Load JSON text files and creates a Panda dataframe
+    df = pd.read_json(f"data/studytextPart{i}.jsonl", lines=True) 
 
-    # 1.3 Spalten umbenennen
-    df = df.rename(columns={  # Spalten umbenennen
+    # 1.3 Rename columns 
+    df = df.rename(columns={ 
         "text": "text",
         "replicationSuccessSigDir": "label",
         "numberOriginal": "numberOriginal",
@@ -57,54 +52,54 @@ def process_part(config, i, output_dir):
     })
 
     # --------------------------
-    # 2. Fine-Tuned Embeddings für alle Texte erzeugen
+    # 2. Create embeddings with the fine-tuned model for all texts
     # --------------------------
     embeddings = model.encode(
         df["text"].tolist(),
         show_progress_bar=True,
-        batch_size=config.batch_size)  # shape: (Anzahl_Texte, Embedding-Dimension)
+        batch_size=config.batch_size)  # shape: number of texts and embedding dimension 
     logger.info(f"Original Embedding-Shape: {embeddings.shape}")
 
     # --------------------------
-    # 3. Mit PCA auf weniger Dimensionen reduzieren
+    # 3. PCA-based Dimension Reduction
     # --------------------------
     pca = sklearn.decomposition.PCA(n_components=32, random_state=42) #n_components can be maximum n_samples
     embeddings_reduced = pca.fit_transform(embeddings)
     logger.info(f"Reduced Embedding-Shape: {embeddings_reduced.shape}")
 
     # --------------------------
-    # 4️. Exportieren
+    # 4️. Export
     # --------------------------
-    # 4.1 Embeddings in einen DataFrame umwandeln
+    # 4.1 Tranform Embedding into Dataframe
     emb_df = pd.DataFrame(embeddings_reduced)
 
-    # 4.2 Spalten benennen (z.B. dim_0, dim_1, ...)
+    # 4.2 Name columns (dim_0, dim_1, ...)
     emb_df.columns = [f"dim_{e}" for e in range(emb_df.shape[1])]
 
-    # 4.3 Die ID für merge mit restlichen Variablen in R
+    # 4.3 ID for merge with all other variables in R
     emb_df['numberOriginal'] = df['numberOriginal'].values
 
-    # 4.4 Speicherort für Export
+    # 4.4 Storage for Export
     file_path = os.path.join(output_dir, f"embeddingsPart{i}.parquet")
 
-    #4.5 Export als .parquet-Datei
+    #4.5 Export as .parquet-Datei
     emb_df.to_parquet(file_path)
     logger.info(f"Embeddings für Part {i} wurden erfolgreich exportiert nach: {file_path}")
 
 
 def main():
-    """Haupt-Funktion für Embedding-Extraktion."""
+    """Main Function for Embedding-Generation."""
     load_dotenv()
 
-    parser = argparse.ArgumentParser(description="Embedding-Extraktion und PCA-Reduktion")
+    parser = argparse.ArgumentParser(description="Embedding Extraction and PCA Reduction")
     parser.add_argument("--part", type=int, choices=[1, 2, 3, 4],
-                        help="Spezifischer Part (1-4). Ohne Angabe werden alle verarbeitet.")
+                        help="Specific Part (1-4). Without specification, all parts will be processed.")
     args = parser.parse_args()
 
-    # 0.1 erkennt ob GPU oder CPU vorhanden ist und passt batch_size entsprechend an
+    # 0.1 checks if script is run on GPU or CPU and adjusts batch_size accordingly
     config = get_device_config()
 
-    # 0.2 erkennt output-Ordner für die zu exportierenden Embeddings und erstellt ihn ggf. neu
+    # 0.2 identifies output folder for the embeddings to be exported and creates it if necessary
     output_dir = "output_embeddings"
     os.makedirs(output_dir, exist_ok=True)
 
@@ -113,35 +108,6 @@ def main():
     else:
         for i in range(1, 5):
             process_part(config, i, output_dir)
-
-
-if __name__ == "__main__":
-    main()
-
-
-
-def main():
-    """Haupt-Funktion für Embedding-Extraktion."""
-    load_dotenv()
-
-    parser = argparse.ArgumentParser(description="Embedding-Extraktion und PCA-Reduktion")
-    parser.add_argument("--part", type=int, choices=[1, 2, 3, 4],
-                        help="Spezifischer Part (1-4). Ohne Angabe werden alle verarbeitet.")
-    args = parser.parse_args()
-
-    # 0.1 erkennt ob GPU oder CPU vorhanden ist und passt batch_size entsprechend an
-    config = get_device_config()
-
-    # 0.2 erkennt output-Ordner für die zu exportierenden Embeddings und erstellt ihn ggf. neu
-    output_dir = "output_embeddings"
-    os.makedirs(output_dir, exist_ok=True)
-
-    if args.part:
-        process_part(config, args.part, output_dir)
-    else:
-        for i in range(1, 5):
-            process_part(config, i, output_dir)
-
 
 if __name__ == "__main__":
     main()
