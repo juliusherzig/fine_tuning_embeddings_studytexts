@@ -1,5 +1,5 @@
 """
-Enables Uploading and Downloading the trained SetFit-Models from and to Huggingface Hub.
+Enables Uploading and Downloading the fine-tuned SetFit-Models from and to Huggingface Hub.
 
 To limit text length, the study texts had been separeted into 4 equal-sized parts. For each part, a single model was trained. 
 
@@ -9,10 +9,10 @@ Use:
     uv run hf_model_j.py push --part 1     # Upload only Part 1
     uv run hf_model_j.py load --part 3     # Download only Part 3"""
 
+
 import argparse
 import os
 import sys
-from pathlib import Path
 
 from dotenv import load_dotenv
 from huggingface_hub import login
@@ -68,36 +68,22 @@ def download_model (repo_id, local_path):
     print(f"Successfully downloaded: {local_path}")
 
 
+#Define the command that can be typed in the terminal to run this script
 def main():
     """Main function with argument parsing."""
-    load_dotenv()
+    load_dotenv() #loads the .env file to access the tokens for HuggingFace Hub
     
-    parser = argparse.ArgumentParser(
-        description="HuggingFace Hub Model Management for SetFit",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+    parser = argparse.ArgumentParser() #creates an empty argument parser to handle command line arguments
+    parser.add_argument("command", choices=["push", "load"]) #defines the command for the script, either push or load
+    parser.add_argument("--part", type=int, choices=[1, 2, 3, 4]) # defines the command for the script, either push or load, and the part number (1-4) to be processed. If no part is specified, all parts will be processed.
 
-    
-Use:
-  uv run hf_model_j.py push           # Upload all 4 local models to HuggingFace Hub
-  uv run hf_model_j.py load           # Download all 4 models from HuggingFace Hub
-  uv run hf_model_j.py push --part 1  # Upload only the model for Part 1
-  uv run hf_model_j.py load --part 3  # Download only the model for Part 3
-"""
-    )
-    
-    parser.add_argument("command", choices=["push", "load"], help="Action: Upload or download model")
-    parser.add_argument("--part", type=int, choices=[1, 2, 3, 4], help="Specific part (1-4). If not specified, all parts will be processed.")
-
-    args = parser.parse_args()
+    args = parser.parse_args() #parses the command line arguments and stores them 
 
     if args.part:
-        process_part(args.command, args.part)
-    else:
-        print("Processing all models (1-4)...")
+        process_part(args.command, args.part) #if a part is specified, process only that part
+    else: #otherwise... 
         for i in range(1, 5):
-            process_part(args.command, i)
+            process_part(args.command, i) #run the script sequentially for all parts (1-4)
 
 
-if __name__ == "__main__":
-    main()
+main()
