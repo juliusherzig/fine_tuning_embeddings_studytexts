@@ -25,14 +25,10 @@ DEFAULT_LOCAL_PATH = "mein_modernbert_studien_modell"
 # Specifies whether the model for text part 1, 2, 3 or 4 or all should be pulled/uploaded
 def process_part(command, part_number):
     """Processes a single part (1-4) for push or load."""
-    repo_id = f"{DEFAULT_REPO_BASE}{part_number}"
-    local_path = f"{DEFAULT_LOCAL_PATH}_{part_number}"
+    repo_id = f"{DEFAULT_REPO_BASE}{part_number}" #combines the base repo with the part number to create the full repo ID in huggingface   
+    local_path = f"{DEFAULT_LOCAL_PATH}_{part_number}" #comines the base local path with the part number to create the full locak path where the model is stored
     
-    if command == "push":
-        if not Path(local_path).exists():
-            print(f"⚠️  Part {part_number} skipped: Folder {local_path} not found.")
-            return
-        
+    if command == "push": # if the command is push, the push-function by huggingface_hub is called to upload the model to the hub      
         print(f"Uploading model for Part {part_number} to {repo_id}.")
         push_model(repo_id, local_path)
 
@@ -46,58 +42,28 @@ def process_part(command, part_number):
         sys.exit(1)
 
 #Function for Uplaoding models to HuggingFace Hub and Downloading models from HuggingFace Hub
-def push_model(repo_id: str, local_path: str) -> None:
-    """Pushes a local model to HuggingFace.
-    
-    Args:
-        repo_id: HuggingFace Repository ID (e.g., "user/model-name")
-        local_path: Path to the local model directory
-    """
+def push_model(repo_id, local_path):
+
     # Load token that authenticates the user for pushing to HuggingFace Hub
-    token = os.getenv("HF_TOKEN_WRITE") #Token is stored in a separate .env file, so that it is not hardcoded in the code
-    if not token:
-        print("Error: HF_TOKEN_WRITE not found in .env")
-        print("Create a .env file with your HuggingFace Token (write access)")
-        sys.exit(1)
+    token = os.getenv("HF_TOKEN_WRITE") #Token is stored in a separate .env file, so that it is not hardcoded in the code 
+    login(token=token) # log in to HuggingFace Hub using the token
+
+    model = SetFitModel.from_pretrained(local_path) #load the model, stored locally in the local_path, to be pushed to HuggingFace Hub
     
-    login(token=token)
-    
-    # Check if the local model exists 
-    if not Path(local_path).exists():
-        print(f"Error: Local model not found: {local_path}")
-        print("Train the model first with the training script before pushing to HuggingFace Hub.")
-        sys.exit(1)
-    
-    print(f"Loading model from {local_path}...")
-    model = SetFitModel.from_pretrained(local_path)
-    
-    print(f"Pushing model to {repo_id}...")
-    model.push_to_hub(repo_id)
+    model.push_to_hub(repo_id) # use the huggingface_hub function to push this model to the specified repo_id on HuggingFace Hub
     
     print(f"Successfully uploaded: https://huggingface.co/{repo_id}")
 
 
-def download_model (repo_id: str, local_path: str) -> None:
-    """Downloads a model from HuggingFace Hub.
-    
-    Args:
-        repo_id: HuggingFace Repository ID (e.g., "user/model-name")
-        local_path: Path to save the model
-    """
+def download_model (repo_id, local_path):
+
     # Load token and authenticate (for private Repos)
     token = os.getenv("HF_TOKEN_READ") #Token is stored in a separate .env file, so that it is not hardcoded in the code
-    if token:
-        login(token=token)
-        print("Authenticated with HF_TOKEN_READ")
-    else:
-        print("No HF_TOKEN_READ found - trying without authentication")
-        print("(Only works for public models)")
+    login(token=token) # log in to HuggingFace Hub using the token
     
-    print(f"Loading model from {repo_id}...")
-    model = SetFitModel.from_pretrained(repo_id, trust_remote_code=True)
+    model = SetFitModel.from_pretrained(repo_id, trust_remote_code=True)  #load the model, stored on HuggingFace Hub in the repo_id, to be downloaded to the local_path
     
-    print(f"Saving model to {local_path}...")
-    model.save_pretrained(local_path)
+    model.save_pretrained(local_path) #storing the model in the predefined local path
     
     print(f"Successfully downloaded: {local_path}")
 
