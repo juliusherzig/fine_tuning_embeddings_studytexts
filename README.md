@@ -18,7 +18,7 @@ Note: The study texts should be separeted in four equal-sized segments in advanc
 
 ## Setup
 
-Install dependencies (uses CUDA 12.4 and Python 3.12 by default):
+Install dependencies (uses  Python 3.12 by default):
 
 ```bash
 uv sync
